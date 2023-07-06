@@ -1,0 +1,35 @@
+# spring-boot-docker/docker-compose.yml
+version: "3.7"
+services:
+  mysql-service:
+    image: mysql:5.7
+    networks:
+      - spring-boot-mysql-network
+    restart: always
+    env_file: ./.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=ronnie01
+      - MYSQL_DATABASE=testapp
+  web-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file: ./.env
+    networks:
+      - spring-boot-mysql-network
+    depends_on:
+      - mysql-service
+    environment:
+      SPRING_APPLICATION_JSON: '{
+            "spring.datasource.url"  : "jdbc:mysql://mysql-service:$MYSQLDB_DOCKER_PORT/$MYSQLDB_DATABASE?useSSL=false",
+            "spring.datasource.username" : "$MYSQLDB_USER",
+            "spring.datasource.password" : "$MYSQLDB_ROOT_PASSWORD",
+            "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.MySQL57Dialect",
+            "spring.jpa.hibernate.ddl-auto" : "update",
+            "server.port":"$SPRING_LOCAL_PORT"
+          }'
+networks:
+  spring-boot-mysql-network:
+    driver: bridge
